@@ -9,9 +9,19 @@ import { authClient } from './lib/auth-client';
 import { AuthPage } from './components/AuthPage';
 
 function App() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: sessionData } = authClient.useSession();
+  // Logon suspenso temporariamente: usando sessão de convidado se não houver login real
+  const session = sessionData || { 
+    user: { 
+      name: 'Usuário Convidado', 
+      email: 'convidado@simulador.com' 
+    } 
+  };
+  
   const { inputs, set, results, brutoTotal } = useSimulator();
 
+  // Comentado para suspender a obrigatoriedade de logon
+  /*
   if (isPending) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
@@ -26,6 +36,7 @@ function App() {
   if (!session) {
     return <AuthPage />;
   }
+  */
 
   const handleLogout = async () => {
     await authClient.signOut();
