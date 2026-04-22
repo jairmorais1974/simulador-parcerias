@@ -11,7 +11,24 @@ export const AuthPage: React.FC = () => {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleResendCode = async () => {
+    setResendLoading(true);
+    setError(null);
+    try {
+      const { error } = await authClient.sendVerificationEmail({
+        email,
+      });
+      if (error) throw new Error(error.message || 'Erro ao reenviar código');
+      setError('Um novo código foi enviado para seu e-mail.');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +137,16 @@ export const AuthPage: React.FC = () => {
                     <p className="text-[10px] text-slate-400 text-center font-medium">
                       Insira o código de 6 dígitos enviado para seu e-mail.
                     </p>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={handleResendCode}
+                        disabled={resendLoading}
+                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-all uppercase tracking-widest"
+                      >
+                        {resendLoading ? 'Enviando...' : 'Não recebeu? Reenviar código'}
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               ) : (
