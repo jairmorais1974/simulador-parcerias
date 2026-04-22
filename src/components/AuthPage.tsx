@@ -5,9 +5,11 @@ import { BarChart3, Mail, Lock, User, ArrowRight, Loader2, AlertCircle } from 'l
 
 export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,12 +19,31 @@ export const AuthPage: React.FC = () => {
     setError(null);
 
     try {
+      if (isVerifying) {
+        const { error } = await authClient.verifyEmail({
+          query: {
+            token: code,
+          },
+        });
+        if (error) throw new Error(error.message || 'Código inválido');
+        setIsVerifying(false);
+        setIsLogin(true);
+        return;
+      }
+
       if (isLogin) {
         const { error } = await authClient.signIn.email({
           email,
           password,
         });
-        if (error) throw new Error(error.message || 'Erro ao fazer login');
+        if (error) {
+          if (error.message?.includes('verified')) {
+            setIsVerifying(true);
+            setError('Por favor, verifique seu e-mail para continuar.');
+            return;
+          }
+          throw new Error(error.message || 'Erro ao fazer login');
+        }
       } else {
         const { error } = await authClient.signUp.email({
           email,
@@ -30,6 +51,7 @@ export const AuthPage: React.FC = () => {
           name,
         });
         if (error) throw new Error(error.message || 'Erro ao criar conta');
+        setIsVerifying(true);
       }
     } catch (err: any) {
       setError(err.message);
@@ -57,77 +79,105 @@ export const AuthPage: React.FC = () => {
             Intelligence Access
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+            {isVerifying ? 'Verifique seu e-mail' : (isLogin ? 'Bem-vindo de volta' : 'Crie sua conta')}
           </h1>
           <p className="text-slate-500 mt-2 font-medium">
-            {isLogin ? 'Acesse o simulador de parcerias' : 'Comece a projetar seus resultados hoje'}
+            {isVerifying ? 'Enviamos um código de segurança' : (isLogin ? 'Acesse o simulador de parcerias' : 'Comece a projetar seus resultados hoje')}
           </p>
         </div>
 
         <div className="bg-white/70 backdrop-blur-xl border border-white/40 rounded-3xl p-8 shadow-2xl shadow-blue-900/5">
           <form onSubmit={handleSubmit} className="space-y-5">
             <AnimatePresence mode="wait">
-              {!isLogin && (
+              {isVerifying ? (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-2"
+                  key="verifying"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="space-y-4"
                 >
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Código de Verificação</label>
                     <input
                       type="text"
-                      required={!isLogin}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Seu nome"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600/30 transition-all font-medium"
+                      required
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      placeholder="000000"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 text-center text-2xl font-black tracking-[0.5em] text-slate-900 placeholder:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600/30 transition-all"
                     />
+                    <p className="text-[10px] text-slate-400 text-center font-medium">
+                      Insira o código de 6 dígitos enviado para seu e-mail.
+                    </p>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="auth-fields"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-5"
+                >
+                  {!isLogin && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                          type="text"
+                          required={!isLogin}
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Seu nome"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600/30 transition-all font-medium"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">E-mail Corporativo</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="exemplo@empresa.com"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600/30 transition-all font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Senha</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600/30 transition-all font-medium"
+                      />
+                    </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">E-mail Corporativo</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="exemplo@empresa.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600/30 transition-all font-medium"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Senha</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600/30 transition-all font-medium"
-                />
-              </div>
-            </div>
-
             {error && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-red-50 border border-red-100 rounded-2xl p-4 flex gap-3 items-start"
+                className={`${isVerifying ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'} border rounded-2xl p-4 flex gap-3 items-start`}
               >
-                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600 font-medium leading-tight">{error}</p>
+                <AlertCircle className={`w-5 h-5 ${isVerifying ? 'text-blue-500' : 'text-red-500'} shrink-0 mt-0.5`} />
+                <p className={`text-sm ${isVerifying ? 'text-blue-600' : 'text-red-600'} font-medium leading-tight`}>{error}</p>
               </motion.div>
             )}
 
@@ -140,7 +190,7 @@ export const AuthPage: React.FC = () => {
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  {isLogin ? 'Entrar no Sistema' : 'Criar minha conta'}
+                  {isVerifying ? 'Confirmar Código' : (isLogin ? 'Entrar no Sistema' : 'Criar minha conta')}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -148,16 +198,25 @@ export const AuthPage: React.FC = () => {
           </form>
 
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors"
-            >
-              {isLogin ? (
-                <>Não tem uma conta? <span className="text-blue-600">Cadastre-se</span></>
-              ) : (
-                <>Já tem uma conta? <span className="text-blue-600">Fazer login</span></>
-              )}
-            </button>
+            {isVerifying ? (
+              <button
+                onClick={() => { setIsVerifying(false); setError(null); }}
+                className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                Voltar para o login
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors"
+              >
+                {isLogin ? (
+                  <>Não tem uma conta? <span className="text-blue-600">Cadastre-se</span></>
+                ) : (
+                  <>Já tem uma conta? <span className="text-blue-600">Fazer login</span></>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
