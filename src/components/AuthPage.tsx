@@ -28,33 +28,43 @@ export const AuthPage: React.FC = () => {
         if (error) throw new Error(error.message || 'Código inválido');
         setIsVerifying(false);
         setIsLogin(true);
+        setError('E-mail verificado com sucesso! Faça login agora.');
         return;
       }
 
       if (isLogin) {
-        const { error } = await authClient.signIn.email({
+        const result = await authClient.signIn.email({
           email,
           password,
         });
-        if (error) {
-          if (error.message?.includes('verified')) {
+        
+        if (result.error) {
+          const msg = result.error.message?.toLowerCase() || '';
+          if (msg.includes('verify') || msg.includes('verified')) {
             setIsVerifying(true);
             setError('Por favor, verifique seu e-mail para continuar.');
             return;
           }
-          throw new Error(error.message || 'Erro ao fazer login');
+          throw new Error(result.error.message || 'Erro ao fazer login');
         }
       } else {
-        const { error } = await authClient.signUp.email({
+        const result = await authClient.signUp.email({
           email,
           password,
           name,
         });
-        if (error) throw new Error(error.message || 'Erro ao criar conta');
+        if (result.error) throw new Error(result.error.message || 'Erro ao criar conta');
         setIsVerifying(true);
+        setError('Enviamos um código para seu e-mail.');
       }
     } catch (err: any) {
-      setError(err.message);
+      const msg = err.message?.toLowerCase() || '';
+      if (msg.includes('verify') || msg.includes('verified')) {
+        setIsVerifying(true);
+        setError('Por favor, verifique seu e-mail para continuar.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -211,7 +221,16 @@ export const AuthPage: React.FC = () => {
                 className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors"
               >
                 {isLogin ? (
-                  <>Não tem uma conta? <span className="text-blue-600">Cadastre-se</span></>
+                  <>
+                    Não tem uma conta? <span className="text-blue-600">Cadastre-se</span>
+                    <br />
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setIsVerifying(true); setError(null); }}
+                      className="mt-2 text-xs text-blue-600/60 hover:text-blue-600"
+                    >
+                      Já tenho um código de verificação
+                    </button>
+                  </>
                 ) : (
                   <>Já tem uma conta? <span className="text-blue-600">Fazer login</span></>
                 )}
