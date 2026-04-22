@@ -4,10 +4,32 @@ import { formatBRL } from './lib/calc';
 import { SliderControl, NumberInput } from './components/Controls';
 import { ScenarioCard } from './components/ScenarioCard';
 import { ComparisonChart } from './components/ComparisonChart';
-import { BarChart3, Settings2, HelpCircle } from 'lucide-react';
+import { BarChart3, Settings2, HelpCircle, LogOut, User as UserIcon } from 'lucide-react';
+import { authClient } from './lib/auth-client';
+import { AuthPage } from './components/AuthPage';
 
 function App() {
+  const { data: session, isPending } = authClient.useSession();
   const { inputs, set, results, brutoTotal } = useSimulator();
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <AuthPage />;
+  }
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-blue-600/10">
@@ -43,7 +65,26 @@ function App() {
             </p>
           </div>
 
-          <div className="hidden lg:flex flex-col items-end">
+          <div className="hidden lg:flex flex-col items-end gap-4">
+            {session && (
+              <div className="flex items-center gap-3 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-600/10">
+                  <UserIcon className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-900 leading-tight">{session.user.name}</span>
+                  <span className="text-[9px] font-medium text-slate-400 leading-tight">{session.user.email}</span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="ml-2 p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                  title="Sair"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 text-right">Faturamento Bruto Total (Anual)</p>
               <div className="flex items-baseline gap-3">
