@@ -9,9 +9,9 @@ import { authClient } from './lib/auth-client';
 import { AuthPage } from './components/AuthPage';
 
 function App() {
-  const { data: sessionData } = authClient.useSession();
-  // Logon suspenso temporariamente: usando sessão de convidado se não houver login real
-  const session = sessionData || { 
+  // const { data: sessionData } = authClient.useSession();
+  // Logon suspenso temporariamente
+  const session = { 
     user: { 
       name: 'Usuário Convidado', 
       email: 'convidado@simulador.com' 
@@ -69,6 +69,9 @@ function App() {
               Simulador de <br />
               <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 bg-clip-text text-transparent">
                 Royalties e Parcerias
+              </span>
+              <span className="text-sm font-bold text-slate-300 ml-4 align-middle opacity-50 uppercase tracking-tighter">
+                (Acesso Liberado)
               </span>
             </h1>
             <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-xl">
