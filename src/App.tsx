@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useSimulator } from './hooks/useSimulator';
 import { formatBRL, projectResult } from './lib/calc';
-import { SliderControl, NumberInput } from './components/Controls';
+import { SliderControl, NumberInput, RangeSlider } from './components/Controls';
 import { ScenarioCard } from './components/ScenarioCard';
 import { ComparisonChart } from './components/ComparisonChart';
 import { BarChart3, Settings2, HelpCircle, LogOut, User as UserIcon } from 'lucide-react';
@@ -167,6 +167,16 @@ function App() {
               </div>
 
               <div className="space-y-8">
+                <RangeSlider
+                  label="Percentual Dev (Cenário 1)"
+                  value={inputs.pctDevCenario1 ?? 30}
+                  min={0}
+                  max={100}
+                  step={1}
+                  suffix="%"
+                  subtitle={`Dev: ${inputs.pctDevCenario1 ?? 30}% | Parceiro: ${100 - (inputs.pctDevCenario1 ?? 30)}%`}
+                  onChange={v => set('pctDevCenario1', v)}
+                />
                 <SliderControl
                   label="Licenças Anuais"
                   value={inputs.licencas.toLocaleString('pt-BR')}
@@ -258,8 +268,8 @@ function App() {
           {/* Conteúdo Principal */}
           <div className="flex flex-col gap-8">
             
-            {/* Grid de Resultados - 4 Colunas em paralelo para telas grandes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {/* Grid de Resultados - 3 Colunas para os 3 cenários restantes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {displayedResults.map((s, i) => (
                 <ScenarioCard
                   key={s.id}

@@ -66,6 +66,48 @@ export function SliderControl({
   );
 }
 
+export function RangeSlider({
+  label, value, onChange, min = 0, max = 100, step = 1, suffix = '%', subtitle
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  suffix?: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2 group">
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] group-hover:text-blue-600 transition-colors">
+          {label}
+        </label>
+        <span className="px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-black rounded-md tabular-nums">
+          {value}{suffix}
+        </span>
+      </div>
+      {subtitle && (
+        <span className="text-[10px] text-slate-400 font-medium">
+          {subtitle}
+        </span>
+      )}
+      <div className="relative flex items-center pt-1">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        />
+      </div>
+    </div>
+  );
+}
+
 interface NumberInputProps {
   label: string;
   value: number;

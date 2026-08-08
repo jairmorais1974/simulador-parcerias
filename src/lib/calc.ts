@@ -21,6 +21,7 @@ export interface SimInputs {
   custoP: number;    // mensal parceiro
   custoD: number;    // mensal dev (infra)
   regimeDev: RegimeDev; // 'lucro_presumido' (17%) ou 'pf' (tabela IRPF)
+  pctDevCenario1?: number; // percentual Dev no Cenário 1 (ex: 30)
 }
 
 export interface ScenarioResult {
@@ -42,15 +43,17 @@ export interface ScenarioResult {
 }
 
 export function calcScenario(inputs: SimInputs): ScenarioResult[] {
-  const { licencas, preco, fixoDev, taxPJ, custoP, custoD, regimeDev = 'lucro_presumido' } = inputs;
+  const { licencas, preco, fixoDev, taxPJ, custoP, custoD, regimeDev = 'lucro_presumido', pctDevCenario1 = 30 } = inputs;
   const brutoTotal = licencas * preco;
   const impostoPJTotal = brutoTotal * (taxPJ / 100);
 
+  const dShareCen1 = pctDevCenario1 / 100;
+  const pShareCen1 = 1 - dShareCen1;
+
   const raw = [
-    { id: 1, label: '30% Dev / 70% Par', pShare: 0.70, dShare: 0.30, type: 'pct' as const },
+    { id: 1, label: `${pctDevCenario1}% Dev / ${100 - pctDevCenario1}% Par`, pShare: pShareCen1, dShare: dShareCen1, type: 'pct' as const },
     { id: 2, label: '40% Dev / 60% Par', pShare: 0.60, dShare: 0.40, type: 'pct' as const },
     { id: 3, label: 'Valor Fixo',         pShare: 0,    dShare: 0,    type: 'fixed' as const },
-    { id: 4, label: 'Venda Direta (Sem Parceiro)', pShare: 0, dShare: 1.0, type: 'direct' as const },
   ];
 
   return raw.map(s => {
@@ -64,12 +67,6 @@ export function calcScenario(inputs: SimInputs): ScenarioResult[] {
       pBruto = brutoTotal - dBruto;
       pImpostos = impostoPJTotal;
       pCustos = custoP * 12;
-    } else if (s.type === 'direct') {
-      pBruto = 0;
-      dBruto = brutoTotal;
-      pImpostos = 0;
-      pCustos = 0;
-      dImpostosPJ = impostoPJTotal;
     } else {
       pBruto = brutoTotal * s.pShare;
       dBruto = brutoTotal * s.dShare;
@@ -77,31 +74,24 @@ export function calcScenario(inputs: SimInputs): ScenarioResult[] {
       pCustos = custoP * 12;
     }
 
-    const pLiq = s.type === 'direct' ? 0 : (pBruto - pImpostos - pCustos);
+    const pLiq = pBruto - pImpostos - pCustos;
 
     let dImpostoDev = 0;
     let dLiq = 0;
     let dImpostoLabel = '';
 
-    if (s.type === 'direct') {
-      // Venda direta pela própria PJ do desenvolvedor
-      dImpostoDev = dImpostosPJ;
-      dImpostoLabel = `Imposto PJ Direct (${taxPJ}%)`;
-      dLiq = dBruto - dImpostosPJ - (custoD * 12);
+    if (regimeDev === 'lucro_presumido') {
+      // 17% de Lucro Presumido sobre a receita/royalties do Dev
+      dImpostoDev = dBruto * 0.17;
+      dImpostoLabel = 'Imposto Lucro Pres. (17%)';
+      dLiq = dBruto - dImpostoDev - (custoD * 12);
     } else {
-      if (regimeDev === 'lucro_presumido') {
-        // 17% de Lucro Presumido sobre a receita/royalties do Dev
-        dImpostoDev = dBruto * 0.17;
-        dImpostoLabel = 'Imposto Lucro Pres. (17%)';
-        dLiq = dBruto - dImpostoDev - (custoD * 12);
-      } else {
-        // Tabela IRPF (Pessoa Física)
-        const dBrutoMes = dBruto / 12;
-        const dIRPFMes = calcIRPF(dBrutoMes);
-        dImpostoDev = dIRPFMes * 12;
-        dImpostoLabel = 'Retenção IRPF (PF)';
-        dLiq = (dBrutoMes - dIRPFMes - custoD) * 12;
-      }
+      // Tabela IRPF (Pessoa Física)
+      const dBrutoMes = dBruto / 12;
+      const dIRPFMes = calcIRPF(dBrutoMes);
+      dImpostoDev = dIRPFMes * 12;
+      dImpostoLabel = 'Retenção IRPF (PF)';
+      dLiq = (dBrutoMes - dIRPFMes - custoD) * 12;
     }
 
     const pctEquiv = s.type === 'fixed' ? (fixoDev / preco) * 100 : undefined;
@@ -109,7 +99,7 @@ export function calcScenario(inputs: SimInputs): ScenarioResult[] {
     return {
       id: s.id,
       label: s.label,
-      pShare: s.type === 'direct' ? '0%' : `${Math.round(s.pShare * 100)}%`,
+      pShare: `${Math.round(s.pShare * 100)}%`,
       dShare: s.type === 'fixed' ? `${pctEquiv!.toFixed(1)}%` : `${Math.round(s.dShare * 100)}%`,
       pBruto,
       pImpostos,

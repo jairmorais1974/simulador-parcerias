@@ -9,6 +9,7 @@ const DEFAULT_INPUTS: SimInputs = {
   custoP: 900,
   custoD: 800,
   regimeDev: 'lucro_presumido',
+  pctDevCenario1: 30,
 };
 
 export function useSimulator() {
