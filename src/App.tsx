@@ -55,7 +55,7 @@ function App() {
         <div className="absolute top-[40%] left-[30%] w-[350px] h-[350px] rounded-full bg-cyan-200/20 blur-[100px] animate-pulse-glow" />
       </div>
 
-      <div className="relative z-10 max-w-[1440px] mx-auto px-6 py-10 md:py-16">
+      <div className="relative z-10 max-w-[1600px] mx-auto px-4 md:px-8 py-10 md:py-16">
 
         {/* Top Header */}
         <motion.div 
@@ -121,7 +121,7 @@ function App() {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] xl:grid-cols-[340px_1fr] gap-8">
 
           {/* Sidebar de Ajustes */}
           <motion.aside
@@ -230,8 +230,8 @@ function App() {
           {/* Conteúdo Principal */}
           <div className="flex flex-col gap-8">
             
-            {/* Grid de Resultados - Alterado para 2 Colunas para evitar poluição visual e esmagamento dos cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+            {/* Grid de Resultados - 4 Colunas em paralelo para telas grandes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {displayedResults.map((s, i) => (
                 <ScenarioCard
                   key={s.id}
