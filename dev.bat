@@ -1,0 +1,3 @@
+@echo off
+echo Iniciando o servidor de desenvolvimento do simulador para toda a rede...
+npm run dev -- --host

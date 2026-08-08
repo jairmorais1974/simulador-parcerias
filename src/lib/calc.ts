@@ -8,7 +8,7 @@ export function calcIRPF(mensal: number): number {
 }
 
 export function formatBRL(val: number): string {
-  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export interface SimInputs {
@@ -45,40 +45,80 @@ export function calcScenario(inputs: SimInputs): ScenarioResult[] {
     { id: 1, label: '30% Dev / 70% Par', pShare: 0.70, dShare: 0.30, type: 'pct' as const },
     { id: 2, label: '40% Dev / 60% Par', pShare: 0.60, dShare: 0.40, type: 'pct' as const },
     { id: 3, label: 'Valor Fixo',         pShare: 0,    dShare: 0,    type: 'fixed' as const },
+    { id: 4, label: 'Venda Direta (Sem Parceiro)', pShare: 0, dShare: 1.0, type: 'direct' as const },
   ];
 
   return raw.map(s => {
     let pBruto: number, dBruto: number;
+    let pImpostos = 0;
+    let pCustos = 0;
+    let dImpostosPJ = 0;
+
     if (s.type === 'fixed') {
       dBruto = licencas * fixoDev;
       pBruto = brutoTotal - dBruto;
+      pImpostos = impostoPJTotal;
+      pCustos = custoP * 12;
+    } else if (s.type === 'direct') {
+      pBruto = 0;
+      dBruto = brutoTotal;
+      pImpostos = 0;
+      pCustos = 0;
+      dImpostosPJ = impostoPJTotal;
     } else {
       pBruto = brutoTotal * s.pShare;
       dBruto = brutoTotal * s.dShare;
+      pImpostos = impostoPJTotal;
+      pCustos = custoP * 12;
     }
 
-    const pLiq = pBruto - impostoPJTotal - custoP * 12;
+    const pLiq = s.type === 'direct' ? 0 : (pBruto - pImpostos - pCustos);
 
-    const dBrutoMes = dBruto / 12;
-    const dIRPFMes = calcIRPF(dBrutoMes);
-    const dLiq = (dBrutoMes - dIRPFMes - custoD) * 12;
+    let dIRPF = 0;
+    let dLiq = 0;
+
+    if (s.type === 'direct') {
+      // Venda direta pela própria PJ do desenvolvedor
+      dIRPF = 0;
+      dLiq = dBruto - dImpostosPJ - (custoD * 12);
+    } else {
+      const dBrutoMes = dBruto / 12;
+      const dIRPFMes = calcIRPF(dBrutoMes);
+      dIRPF = dIRPFMes * 12;
+      dLiq = (dBrutoMes - dIRPFMes - custoD) * 12;
+    }
 
     const pctEquiv = s.type === 'fixed' ? (fixoDev / preco) * 100 : undefined;
 
     return {
       id: s.id,
       label: s.label,
-      pShare: `${Math.round(s.pShare * 100)}%`,
+      pShare: s.type === 'direct' ? '0%' : `${Math.round(s.pShare * 100)}%`,
       dShare: s.type === 'fixed' ? `${pctEquiv!.toFixed(1)}%` : `${Math.round(s.dShare * 100)}%`,
       pBruto,
-      pImpostos: impostoPJTotal,
-      pCustos: custoP * 12,
+      pImpostos,
+      pCustos,
       pLiq,
       dBruto,
-      dIRPF: dIRPFMes * 12,
+      dIRPF,
       dInfra: custoD * 12,
       dLiq: Math.max(0, dLiq),
       pctEquiv,
     };
   });
+}
+
+export function projectResult(results: ScenarioResult[], periodo: 'mensal' | 'anual'): ScenarioResult[] {
+  if (periodo === 'anual') return results;
+  return results.map(r => ({
+    ...r,
+    pBruto: r.pBruto / 12,
+    pImpostos: r.pImpostos / 12,
+    pCustos: r.pCustos / 12,
+    pLiq: r.pLiq / 12,
+    dBruto: r.dBruto / 12,
+    dIRPF: r.dIRPF / 12,
+    dInfra: r.dInfra / 12,
+    dLiq: r.dLiq / 12,
+  }));
 }

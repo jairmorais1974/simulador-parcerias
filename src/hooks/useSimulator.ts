@@ -3,7 +3,7 @@ import { SimInputs, calcScenario, ScenarioResult } from '../lib/calc';
 
 const DEFAULT_INPUTS: SimInputs = {
   licencas: 30,
-  preco: 17000,
+  preco: 7500,
   fixoDev: 6400,
   taxPJ: 12,
   custoP: 900,
@@ -12,6 +12,7 @@ const DEFAULT_INPUTS: SimInputs = {
 
 export function useSimulator() {
   const [inputs, setInputs] = useState<SimInputs>(DEFAULT_INPUTS);
+  const [periodo, setPeriodo] = useState<'mensal' | 'anual'>('anual');
 
   const set = <K extends keyof SimInputs>(key: K, value: SimInputs[K]) => {
     setInputs(prev => ({ ...prev, [key]: value }));
@@ -20,5 +21,5 @@ export function useSimulator() {
   const results: ScenarioResult[] = useMemo(() => calcScenario(inputs), [inputs]);
   const brutoTotal = inputs.licencas * inputs.preco;
 
-  return { inputs, set, results, brutoTotal };
+  return { inputs, set, results, brutoTotal, periodo, setPeriodo };
 }

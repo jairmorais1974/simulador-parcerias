@@ -21,11 +21,20 @@ export function ComparisonChart({ results }: Props) {
       {
         label: 'Líquido Parceiro (PJ)',
         data: results.map(r => r.pLiq),
-        backgroundColor: 'rgba(203, 213, 225, 0.4)', // slate-300 alpha
-        borderColor: 'rgba(148, 163, 184, 0.2)',
-        borderWidth: 1,
+        backgroundColor: (ctx: any) => {
+          const chart = ctx.chart;
+          const {ctx: canvasCtx, chartArea} = chart;
+          if (!chartArea) return 'rgba(203, 213, 225, 0.5)';
+          const gradient = canvasCtx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+          gradient.addColorStop(0, 'rgba(203, 213, 225, 0.3)');
+          gradient.addColorStop(1, 'rgba(203, 213, 225, 0.6)');
+          return gradient;
+        },
+        borderColor: '#cbd5e1',
+        borderWidth: 1.5,
         borderRadius: 12,
-        maxBarThickness: 40,
+        maxBarThickness: 42,
+        hoverBackgroundColor: 'rgba(203, 213, 225, 0.8)'
       },
       {
         label: 'Líquido Jair — Dev (PF)',
@@ -35,14 +44,14 @@ export function ComparisonChart({ results }: Props) {
           const {ctx: canvasCtx, chartArea} = chart;
           if (!chartArea) return '#2563eb';
           const gradient = canvasCtx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-          gradient.addColorStop(0, '#2563eb');
-          gradient.addColorStop(1, '#60a5fa');
+          gradient.addColorStop(0, '#2563eb'); // Royal Blue
+          gradient.addColorStop(1, '#0284c7'); // Sky Blue
           return gradient;
         },
         borderColor: '#2563eb',
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderRadius: 12,
-        maxBarThickness: 40,
+        maxBarThickness: 42,
         hoverBackgroundColor: '#1d4ed8'
       },
     ],
@@ -55,10 +64,10 @@ export function ComparisonChart({ results }: Props) {
     scales: {
       y: {
         beginAtZero: true,
-        grid: { color: '#f1f5f9', drawTicks: false },
+        grid: { color: '#e2e8f0', drawTicks: false },
         border: { display: false },
         ticks: {
-          color: '#94a3b8',
+          color: '#64748b',
           font: { family: 'Inter', size: 10, weight: 500 },
           padding: 10,
           callback: v => `R$ ${(Number(v) / 1000).toFixed(0)}k`,
@@ -68,7 +77,7 @@ export function ComparisonChart({ results }: Props) {
         grid: { display: false },
         border: { display: false },
         ticks: { 
-          color: '#64748b', 
+          color: '#475569', 
           font: { family: 'Inter', size: 10, weight: 'bold' },
           padding: 10
         },
