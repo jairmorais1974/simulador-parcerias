@@ -102,7 +102,7 @@ export function ScenarioCard({ scenario, index, isFeatured, periodo }: Props) {
           isFeatured ? 'bg-blue-50/30 border-blue-100' : 'bg-slate-50/60 border-slate-200/60'
         }`}>
           <Row label={`Royalties Brutos (${ts})`} value={formatBRL(s.dBruto)} color="text-blue-900" icon={<TrendingUp className="w-3.5 h-3.5" />} />
-          <Row label={`Retenção IRPF (PF/${t})`} value={`- ${formatBRL(s.dIRPF)}`} color="text-rose-600" icon={<Landmark className="w-3.5 h-3.5" />} />
+          <Row label={`${s.dImpostoLabel} (${t})`} value={`- ${formatBRL(s.dIRPF)}`} color="text-rose-600" icon={<Landmark className="w-3.5 h-3.5" />} />
           <Row label={`Custo Infra/Servidor (${t})`} value={`- ${formatBRL(s.dInfra)}`} color="text-amber-800/90" icon={<Server className="w-3.5 h-3.5" />} />
           
           <div className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-blue-100/50">

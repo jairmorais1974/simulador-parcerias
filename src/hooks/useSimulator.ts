@@ -8,6 +8,7 @@ const DEFAULT_INPUTS: SimInputs = {
   taxPJ: 12,
   custoP: 900,
   custoD: 800,
+  regimeDev: 'lucro_presumido',
 };
 
 export function useSimulator() {

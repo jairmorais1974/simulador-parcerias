@@ -11,6 +11,8 @@ export function formatBRL(val: number): string {
   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+export type RegimeDev = 'lucro_presumido' | 'pf';
+
 export interface SimInputs {
   licencas: number;
   preco: number;
@@ -18,6 +20,7 @@ export interface SimInputs {
   taxPJ: number;     // percentual (ex: 12)
   custoP: number;    // mensal parceiro
   custoD: number;    // mensal dev (infra)
+  regimeDev: RegimeDev; // 'lucro_presumido' (17%) ou 'pf' (tabela IRPF)
 }
 
 export interface ScenarioResult {
@@ -30,14 +33,16 @@ export interface ScenarioResult {
   pCustos: number;
   pLiq: number;
   dBruto: number;
-  dIRPF: number;
+  dIRPF: number;     // Valor do imposto do dev (seja PJ 17% ou IRPF PF)
+  dTaxaTipo: RegimeDev;
+  dImpostoLabel: string;
   dInfra: number;
   dLiq: number;
   pctEquiv?: number; // só no cenário fixo
 }
 
 export function calcScenario(inputs: SimInputs): ScenarioResult[] {
-  const { licencas, preco, fixoDev, taxPJ, custoP, custoD } = inputs;
+  const { licencas, preco, fixoDev, taxPJ, custoP, custoD, regimeDev = 'lucro_presumido' } = inputs;
   const brutoTotal = licencas * preco;
   const impostoPJTotal = brutoTotal * (taxPJ / 100);
 
@@ -74,18 +79,29 @@ export function calcScenario(inputs: SimInputs): ScenarioResult[] {
 
     const pLiq = s.type === 'direct' ? 0 : (pBruto - pImpostos - pCustos);
 
-    let dIRPF = 0;
+    let dImpostoDev = 0;
     let dLiq = 0;
+    let dImpostoLabel = '';
 
     if (s.type === 'direct') {
       // Venda direta pela própria PJ do desenvolvedor
-      dIRPF = 0;
+      dImpostoDev = dImpostosPJ;
+      dImpostoLabel = `Imposto PJ Direct (${taxPJ}%)`;
       dLiq = dBruto - dImpostosPJ - (custoD * 12);
     } else {
-      const dBrutoMes = dBruto / 12;
-      const dIRPFMes = calcIRPF(dBrutoMes);
-      dIRPF = dIRPFMes * 12;
-      dLiq = (dBrutoMes - dIRPFMes - custoD) * 12;
+      if (regimeDev === 'lucro_presumido') {
+        // 17% de Lucro Presumido sobre a receita/royalties do Dev
+        dImpostoDev = dBruto * 0.17;
+        dImpostoLabel = 'Imposto Lucro Pres. (17%)';
+        dLiq = dBruto - dImpostoDev - (custoD * 12);
+      } else {
+        // Tabela IRPF (Pessoa Física)
+        const dBrutoMes = dBruto / 12;
+        const dIRPFMes = calcIRPF(dBrutoMes);
+        dImpostoDev = dIRPFMes * 12;
+        dImpostoLabel = 'Retenção IRPF (PF)';
+        dLiq = (dBrutoMes - dIRPFMes - custoD) * 12;
+      }
     }
 
     const pctEquiv = s.type === 'fixed' ? (fixoDev / preco) * 100 : undefined;
@@ -100,7 +116,9 @@ export function calcScenario(inputs: SimInputs): ScenarioResult[] {
       pCustos,
       pLiq,
       dBruto,
-      dIRPF,
+      dIRPF: dImpostoDev,
+      dTaxaTipo: regimeDev,
+      dImpostoLabel,
       dInfra: custoD * 12,
       dLiq: Math.max(0, dLiq),
       pctEquiv,
