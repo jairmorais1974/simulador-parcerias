@@ -4,10 +4,10 @@ import { SimInputs, calcScenario, ScenarioResult } from '../lib/calc';
 const DEFAULT_INPUTS: SimInputs = {
   licencas: 30,
   preco: 7500,
-  fixoDev: 6400,
+  fixoDev: 3000,
   taxPJ: 12,
-  custoP: 900,
-  custoD: 800,
+  custoP: 0,
+  custoD: 350,
   regimeDev: 'lucro_presumido',
   pctDevCenario1: 30,
 };
