@@ -191,7 +191,7 @@ function App() {
                   isCurrency={true}
                 />
                 <SliderControl
-                  label="C3: Fixo do Dev (R$)"
+                  label="Comissão por licença -  Fixo (R$)"
                   value={inputs.fixoDev.toLocaleString('pt-BR')}
                   min={10} max={1000000} currentValue={inputs.fixoDev}
                   onChange={v => set('fixoDev', v)}
